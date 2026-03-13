@@ -302,7 +302,7 @@ async function scpFile(remoteHost: string, remotePath: string, localPath: string
         "-o",
         "StrictHostKeyChecking=yes",
         "--",
-        `${safeRemoteHost}:${remotePath}`,
+        `${safeRemoteHost}:'${remotePath.replace(/'/g, "'\\''")}'`,
         localPath,
       ],
       { stdio: ["ignore", "ignore", "pipe"] },
