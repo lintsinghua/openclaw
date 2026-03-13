@@ -361,6 +361,10 @@ export async function createCanvasHostHandler(
       res.setHeader("Cache-Control", "no-store");
       if (mime === "text/html") {
         const html = data.toString("utf8");
+        res.setHeader(
+          "Content-Security-Policy",
+          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; frame-ancestors 'none'; object-src 'none'; base-uri 'none'",
+        );
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.end(liveReload ? injectCanvasLiveReload(html) : html);
         return true;
