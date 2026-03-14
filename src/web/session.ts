@@ -102,6 +102,8 @@ export async function createWaSocket(
   const logger = toPinoLikeLogger(baseLogger, verbose ? "info" : "silent");
   const authDir = resolveUserPath(opts.authDir ?? resolveDefaultWebAuthDir());
   await fsPromises.mkdir(authDir, { recursive: true, mode: 0o700 });
+  // chmod to harden directories created by earlier versions (recursive: true won't update existing dirs)
+  await fsPromises.chmod(authDir, 0o700).catch(() => {});
   const sessionLogger = getChildLogger({ module: "web-session" });
   maybeRestoreCredsFromBackup(authDir);
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
