@@ -127,13 +127,28 @@ export function createInboundDebouncer<T>(params: InboundDebounceCreateParams<T>
 
     const buffer: DebounceBuffer<T> = { items: [item], timeout: null, debounceMs };
     buffers.set(key, buffer);
-    // Evict oldest keys, cancelling their pending timers to avoid ghost flushes.
+    // Evict oldest keys: flush their buffered items and cancel pending timers.
     while (buffers.size > maxKeys) {
       const oldest = buffers.keys().next();
-      if (oldest.done) break;
+      if (oldest.done) {
+        break;
+      }
       const evicted = buffers.get(oldest.value);
-      if (evicted?.timeout) clearTimeout(evicted.timeout);
-      buffers.delete(oldest.value);
+      if (evicted) {
+        if (evicted.timeout) {
+          clearTimeout(evicted.timeout);
+          evicted.timeout = null;
+        }
+        buffers.delete(oldest.value);
+        if (evicted.items.length > 0) {
+          // Fire-and-forget: flush evicted items so they are not silently lost.
+          void Promise.resolve(params.onFlush(evicted.items)).catch((err) => {
+            params.onError?.(err, evicted.items);
+          });
+        }
+      } else {
+        buffers.delete(oldest.value);
+      }
     }
     scheduleFlush(key, buffer);
   };
